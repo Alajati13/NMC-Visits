@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block body %}
+    <div class="content-section">
+        <form method="Post" action="{{url_for('departments')}}">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4 pb-2">Add Department</legend>
+                <div class="form-group">
+                    {{ form.department.label(class="form-control-label") }}
+                    {% if form.department.errors %}
+                        {{ form.department(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.department.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.department(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+            </fieldset>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-outline-info") }}
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+
+{% block side %}
+<div class="content-section">
+    <h3>Current Departments</h3>
+        <ul class="list-group">
+            {% for department in departments %}
+                    <form class="d-flex flex-row p-2" method="Post" action="{{url_for('deleteDepartment')}}">
+                        <div class="d-flex align-self-stretch align-items-center">
+                            <li class="d-flex">{{department}}</li>
+                        </div>
+                        <div class="d-flex ml-auto align-items-center">
+                            <input type="hidden" name="departmentName" value="{{department}}">
+                            <input class="p-2" type="submit" value="-">
+                        </div>
+                    </form>
+            {% endfor %}
+        </ul>
+</div>
+{% endblock %}

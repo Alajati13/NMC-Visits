@@ -10,8 +10,7 @@ def load_user(user_id):
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    firstName = db.Column(db.String(100))
-    lastName = db.Column(db.String(100))
+    username = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(), nullable=False)
     company = db.Column(db.String())
@@ -22,17 +21,33 @@ class User(db.Model, UserMixin):
 
 
     def __repr__(self):
-        if self.firstName == None and self.lastName == None:
-            return f"User : Name Still pending - Email : {self.email}\n"
-        return f"User : {self.firstName} {self.lastName} - Email : {self.email}\n"
+        return f"User : {self.username} - Email : {self.email}\n"
 
 class Appointment(db.Model):
-    departments = ["Cardiology", "Internal Medicine", "Pediatrics", "ENT", "Nephrology"]
     id = db.Column(db.Integer, primary_key=True)
     appointmentDate = db.Column(db.DateTime, nullable=False)
     visitedDepartments = db.Column(db.String(150), nullable=False)
     creationDate = db.Column(db.DateTime, nullable=False, default=datetime.now)
     visitor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    
+    # departments = db.relationship('VisitedDepartments', backref='visitedDepartments', lazy=True)
+'''
     def __repr__(self):
         return f"Appointment('{self.visitor_id}', '{self.appointmentDate}', '{self.visitedDepartments}')"
+
+'''
+    
+class Departments(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    departmentName = db.Column(db.String(50), nullable=False)
+
+    def __repr__(self):
+        return f"Departments('{self.departmentName}')"
+"""
+class VisitedDepartments(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    appointment_id = db.Column(db.Integer, db.ForeignKey('appointment.id'), nullable=False)
+    department_id = db.Column(db.Integer, db.ForeignKey('department.id'), nullable=False)
+
+    def __repr__(self):
+        return f"Visited Departments('{self.department_id}' for appointment '{self.appointment_id}')"
+"""
