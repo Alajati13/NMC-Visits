@@ -1,4 +1,4 @@
-from nmcvisits.models import User, Appointment, Departments # ,VisitedDepartments
+from nmcvisits.models import User, Appointment, Departments, AllowedDaysToVisit # ,VisitedDepartments
 from nmcvisits import db
 
 
@@ -10,3 +10,9 @@ def getDepartments():
     return departments
 
 
+def getAllowedDaysToVisit():
+    allowedDaysToVisit = []
+    rows = AllowedDaysToVisit.query.all()
+    for row in rows:
+        allowedDaysToVisit.append(row.day)
+    return allowedDaysToVisit

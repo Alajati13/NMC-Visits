@@ -1,11 +1,14 @@
 from csv import field_size_limit
 from dataclasses import Field
 from datetime import datetime
+from ssl import ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, DateField, SelectMultipleField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, DateField, SelectMultipleField, SelectField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, Regexp, ValidationError
-from nmcvisits.models import User, Appointment, Departments # ,VisitedDepartments
+from nmcvisits.models import User, Appointment, Departments, AllowedDaysToVisit # ,VisitedDepartments
+from nmcvisits.helpers import getDepartments
+
 
 class RegistrationForm(FlaskForm):
     username = StringField("Full Name", validators=[DataRequired(), Length(min=2, max=100)])
@@ -36,27 +39,39 @@ class UpdateProfileForm(FlaskForm):
     submit = SubmitField('Update')
 
 class CreateAppointment(FlaskForm):
-    '''
-     departments = []
-    for entry in Departments.query.all():
-        departments.append(entry["departmentName"])
-
-    '''
+    departments = getDepartments()
    
     appointmentDate = DateField("Appointment requested Date", validators=[DataRequired()])
-    #department = SelectMultipleField("Departments to visit", choices=[departments])
+    department = SelectMultipleField("Departments to visit", validators=[DataRequired()], choices=[*departments])
     submit = SubmitField('Create Appointment')
+
+    def validate_appointmentDate(self, appointmentDate):
+        if appointmentDate.data <= datetime.today().date():
+            raise ValidationError("Requested Date for visit cannot be in the past. please choose another date")
+
+    # validate date here using a custom validator function
+    # program the app so that admin can decide which days can be visiting days
 
 class AddDepartments(FlaskForm):
     department = StringField("Department Name", validators=[DataRequired(), Length(min=2, max=100)])
     submit = SubmitField('Add Department')
+
     def validate_department(self, department):
-        dpt =  Departments.query.filter_by(departmentName=department.data).first()
+        dpt =  Departments.query.filter_by(departmentName=department.data.strip().lower().title()).first()
         if dpt:
             raise ValidationError("Department is already available.")
 
-'''
-class DeleteDepartments(FlaskForm):
-    department = StringField("Department Name", validators=[DataRequired(), Length(min=2, max=100)])
-    submit = SubmitField('Add Department')
-'''
+class UpdateVisitingDays(FlaskForm):
+    weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    notYetAllowedDays = weekdays
+    rows = AllowedDaysToVisit.query.all()
+    for row in rows:
+        notYetAllowedDays.remove(row.day)
+    day = SelectField("Day", choices = notYetAllowedDays, validators=[DataRequired()])
+    submit = SubmitField('Update Visiting Days')
+
+    #def validate_day(self, day):
+     #   if day == AllowedDaysToVisit.query.filter_by(day=str(day.data)).first():
+      #      raise ValidationError("Day is already added to allowed days. select another day.")
+        # update code so it is only showing days that are not allowed
+

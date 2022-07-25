@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+
+{% block body %}
+    <div class="content-section">
+        <form method="Post" action="{{url_for('allowedDaysToVisit')}}">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4 pb-2">Add allowed day</legend>
+                <div class="form-group">
+                    {{ form.day.label(class="form-control-label") }}
+                    {% if form.day.errors %}
+                        {{ form.day(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.day.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.day(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+            </fieldset>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-outline-info") }}
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+
+{% block side %}
+<div class="content-section">
+    <h3>Allowed Days To Visit</h3>
+        <ul class="list-group">
+            {%if days %}
+            {% for day in days %}
+                    <form class="d-flex flex-row p-2" method="Post" action="{{url_for('deleteDay')}}">
+                        <div class="d-flex align-self-stretch align-items-center">
+                            <li class="d-flex">{{day}}</li>
+                        </div>
+                        <div class="d-flex ml-auto align-items-center">
+                            <input type="hidden" name="day" value="{{day}}">
+                            <input class="p-2" type="submit" value="-">
+                        </div>
+                    </form>
+            {% endfor %}
+            {% endif %}
+        </ul>
+</div>
+{% endblock %}

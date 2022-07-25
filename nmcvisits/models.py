@@ -19,22 +19,19 @@ class User(db.Model, UserMixin):
     imageFile = db.Column(db.String(20), nullable=False, default='default.jpg')
     appointments = db.relationship('Appointment', backref='visitor', lazy=True)
 
-
     def __repr__(self):
         return f"User : {self.username} - Email : {self.email}\n"
 
 class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     appointmentDate = db.Column(db.DateTime, nullable=False)
-    visitedDepartments = db.Column(db.String(150), nullable=False)
     creationDate = db.Column(db.DateTime, nullable=False, default=datetime.now)
     visitor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     # departments = db.relationship('VisitedDepartments', backref='visitedDepartments', lazy=True)
-'''
+    
     def __repr__(self):
-        return f"Appointment('{self.visitor_id}', '{self.appointmentDate}', '{self.visitedDepartments}')"
+        return f"Appointment('{self.visitor_id}', '{self.appointmentDate}')"
 
-'''
     
 class Departments(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -42,12 +39,19 @@ class Departments(db.Model):
 
     def __repr__(self):
         return f"Departments('{self.departmentName}')"
-"""
+
+
 class VisitedDepartments(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     appointment_id = db.Column(db.Integer, db.ForeignKey('appointment.id'), nullable=False)
-    department_id = db.Column(db.Integer, db.ForeignKey('department.id'), nullable=False)
+    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
 
+    '''
     def __repr__(self):
         return f"Visited Departments('{self.department_id}' for appointment '{self.appointment_id}')"
-"""
+    '''
+
+class AllowedDaysToVisit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    day = db.Column(db.String, nullable=False, unique=True)
+

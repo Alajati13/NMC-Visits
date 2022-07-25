@@ -28,6 +28,10 @@
             <div class="navbar-nav mr-auto">
               <a class="nav-item nav-link" href="{{ url_for('home') }}">Home</a>
               <a class="nav-item nav-link" href="{{ url_for('about') }}">About</a>
+              <a class="nav-item nav-link" href="{{ url_for('departments') }}">Departments</a>
+              <a class="nav-item nav-link" href="{{ url_for('createAppointment') }}">Create Appointment</a>
+              <a class="nav-item nav-link" href="{{ url_for('allowedDaysToVisit') }}">Update Visiting Days</a>
+            
             </div>
             <div class="navbar-nav">
               {% if current_user.is_authenticated %}

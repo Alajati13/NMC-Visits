@@ -3,10 +3,10 @@ import os
 from PIL import Image
 from flask import render_template, url_for, redirect, flash, request
 from nmcvisits import app, db, bcrypt
-from nmcvisits.forms import RegistrationForm, LoginForm, UpdateProfileForm ,AddDepartments # , DeleteDepartments
-from nmcvisits.models import Departments, User, Appointment
+from nmcvisits.forms import RegistrationForm, LoginForm, UpdateProfileForm ,AddDepartments, CreateAppointment, UpdateVisitingDays
+from nmcvisits.models import Departments, User, Appointment, AllowedDaysToVisit, VisitedDepartments
 from flask_login import login_user, current_user, logout_user, login_required
-from nmcvisits.helpers import getDepartments
+from nmcvisits.helpers import getDepartments, getAllowedDaysToVisit
 
 @app.route("/")
 @app.route("/home")
@@ -114,4 +114,53 @@ def deleteDepartment():
     return redirect(url_for("departments"))
 
 
+@app.route("/createAppointment", methods=["POST", "GET"])
+@login_required
+def createAppointment():
+    form = CreateAppointment()
+    if form.validate_on_submit():
+        appointment = Appointment(appointmentDate = form.appointmentDate.data, visitor_id = current_user.id)
+        departments = form.department.data
+        db.session.add(appointment)
+        
+        for dpt in departments:
+            department = Departments.query.filter_by(departmentName = dpt).first()
+            visitedDepartment = VisitedDepartments(appointment_id = appointment.id, department_id = department.id)
+            db.session.add(visitedDepartment)
+    
+        db.session.commit()
+        flash(f'Your appointment has been created. Please Log in and complete your profile data to proceed.', 'success')
+    appointments = []
+    rows = Appointment.query.filter_by(visitor_id=current_user.id)
+    for row in rows:
+        entry={}
+        entry["appointmentDate"] = row.appointmentDate.date()
+        dpts = VisitedDepartments.query.filter_by(appointment_id=row.id)
+        listOfDpts = []
+        for dpt in dpts:
+            name = Departments.query.filter_by(id=dpt.department_id).first()
+            listOfDpts.append(name.departmentName)
+        entry["departments"] = listOfDpts
+        appointments.append(entry)
+    return render_template("createAppointment.html", sidebar = True, form=form, appointments=appointments)
 
+@app.route("/allowedDaysToVisit", methods=["POST", "GET"])
+@login_required
+def allowedDaysToVisit():
+    form = None
+    form = UpdateVisitingDays()
+    if form.validate_on_submit():
+        day = AllowedDaysToVisit(day=form.day.data) 
+        db.session.add(day)
+        db.session.commit()       
+        return redirect(url_for("allowedDaysToVisit"))
+    return render_template("allowedDaysToVisit.html", days = getAllowedDaysToVisit(), sidebar = True, form=UpdateVisitingDays())
+
+@app.route("/deleteDay", methods=["POST"])
+@login_required
+def deleteDay():
+    dayName = request.form.get("day")
+    day = AllowedDaysToVisit.query.filter_by(day=dayName).first()
+    db.session.delete(day)
+    db.session.commit()
+    return redirect(url_for("allowedDaysToVisit"))
