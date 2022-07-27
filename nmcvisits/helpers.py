@@ -1,7 +1,9 @@
+from ssl import ALERT_DESCRIPTION_PROTOCOL_VERSION
+from textwrap import wrap
 from nmcvisits.models import User, Appointment, Departments, AllowedDaysToVisit # ,VisitedDepartments
 from nmcvisits import db, app
 import os
-from PIL import Image
+from PIL import Image, ImageOps
 import secrets
 from fpdf import FPDF
 
@@ -43,6 +45,7 @@ def resizeImage(path):
         return crop_center(pil_img, min(pil_img.size), min(pil_img.size))
 
     im_thumb = crop_max_square(im).resize((thumb_width, thumb_width), Image.Resampling.LANCZOS)
+
     return im_thumb
 
 def savePicture(formPicture):
@@ -55,37 +58,47 @@ def savePicture(formPicture):
     i.close()
     return pictureName
     
-def generatePDF(userPhoto, appointment_id):
+def generatePDF(appointment_id):
+    appointment = Appointment.query.filter_by(id=appointment_id).first()
+    user_id = appointment.visitor_id
+    user = User.query.filter_by(id=user_id).first()        
+    userphoto = user.imageFile
     pdf = FPDF(orientation = 'P', unit = 'mm', format = 'A4')
     pdf.add_page()
     pdf.set_font('Helvetica', size=24)
     pdf.set_text_color(90, 150, 255)
 
-    path = os.path.join(app.root_path, "static/NMC_Logo.png")
-    pdf.image(path, x = 30, y = 20, w = 30, h = 10)
+    logo_path = os.path.join(app.root_path, "static/NMC_Logo.png")
+    pdf.image(logo_path, x = 30, y = 20, w = 30, h = 10)
     pdf.text(x = 78, y = 28, txt="NMC Hospital Visit Request")
 
     pdf.set_font('Helvetica', size=18)
     pdf.set_text_color(0, 0, 0)
 
-    path = os.path.join(app.root_path, "static/Profile_Photos", userPhoto)
-    pdf.image(path, x = 30, y = 800, w = 50, h = 50)
+    path = os.path.join(app.root_path, "static/Profile_Photos", userphoto)
+    img = Image.open(path)
+    bordered_img = ImageOps.expand(img, border=4, fill = "green")
+    save_path = os.path.join(app.root_path, userphoto)
+    bordered_img.save(save_path)
+    pdf.image(save_path, x = 15, y = 85, w = 45, h = 45)
+    img.close()
+    os.remove(save_path)
 
     pdf.set_xy(0, 50)
     pdf.cell(200, 15, txt = "Request for Visit", ln = 1, align = 'C')
     pdf.set_xy(0, 60)
-    pdf.cell(200, 15, txt = "Date : 16/12/2022", ln = 1, align = 'C')
+    pdf.cell(200, 15, txt = f"Date : {appointment.appointmentDate.date()}", ln = 1, align = 'C')
 
-    pdf.set_xy(110, 80)
-    pdf.cell(100, 15, txt = "Requester : Ali Alajati", ln = 1, align = 'l')
-    pdf.set_xy(110, 90)
-    pdf.cell(100, 15, txt = "Desidnation : Produc Specialist", ln = 1, align = 'l')
-    pdf.set_xy(110, 100)
-    pdf.cell(100, 15, txt = "Company : Bayer", ln = 1, align = 'l')
-    pdf.set_xy(110, 110)
-    pdf.cell(100, 15, txt = "Email : alajati13@hotmail.com", ln = 1, align = 'l')
-    pdf.set_xy(110, 120)
-    pdf.cell(100, 15, txt = "Phone : 0507553868", ln = 1, align = 'l')
+    pdf.set_xy(80, 80)
+    pdf.cell(100, 15, txt = f"Requester : {user.username}", ln = 1, align = 'l')
+    pdf.set_xy(80, 90)
+    pdf.cell(100, 15, txt = f"Desidnation : {user.jobTitle}", ln = 1, align = 'l')
+    pdf.set_xy(80, 100)
+    pdf.cell(100, 15, txt = f"Company : {user.company} ", ln = 1, align = 'l')
+    pdf.set_xy(80, 110)
+    pdf.cell(100, 15, txt = f"Email : {user.email}", ln = 1, align = 'l')
+    pdf.set_xy(80, 120)
+    pdf.cell(100, 15, txt = f"Phone : {user.phone}", ln = 1, align = 'l')
 
     pdf.text(x = 10, y = 135, txt="______________________________________________________")
 

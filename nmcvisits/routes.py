@@ -187,11 +187,8 @@ def users():
 def printAppointment():
     if request.method == "POST":
         appointment_id = request.form.get("appointment_id")
-        appointment = Appointment.query.filter_by(id=appointment_id).first()
-        user_id = appointment.visitor_id
-        user = User.query.filter_by(id=user_id).first()
-        userphoto = user.imageFile
-        generatePDF(userphoto, appointment_id)
+        
+        generatePDF(appointment_id)
         path = os.path.join(app.root_path, "static/Visits_Printouts")
         filename = (appointment_id + ".pdf")
         try:

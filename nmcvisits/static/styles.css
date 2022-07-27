@@ -70,6 +70,7 @@ body {
   .account-img {
     height: 125px;
     width: 125px;
+    padding: 2px;
     margin-right: 20px;
     margin-bottom: 16px;
   }
