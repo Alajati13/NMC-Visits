@@ -1,12 +1,12 @@
 import secrets
 import os
 from PIL import Image
-from flask import render_template, url_for, redirect, flash, request
+from flask import render_template, url_for, redirect, flash, request, send_from_directory
 from nmcvisits import app, db, bcrypt
 from nmcvisits.forms import RegistrationForm, LoginForm, UpdateProfileForm ,AddDepartments, CreateAppointment, UpdateVisitingDays
 from nmcvisits.models import Departments, User, Appointment, AllowedDaysToVisit, VisitedDepartments
 from flask_login import login_user, current_user, logout_user, login_required
-from nmcvisits.helpers import getDepartments, getAllowedDaysToVisit
+from nmcvisits.helpers import getDepartments, getAllowedDaysToVisit, savePicture, generatePDF
 
 @app.route("/")
 @app.route("/home")
@@ -52,17 +52,6 @@ def logout():
     logout_user()
     return redirect(url_for("home"))
 
-def savePicture(formPicture):
-    random_hex = secrets.token_hex(8)
-    _, ext = os.path.splitext(formPicture.filename)
-    pictureName = random_hex + ext
-    picturePath = os.path.join(app.root_path, "static/Profile_Photos", pictureName)
-    outputSize = (400,400)
-    i = Image.open(formPicture)
-    i.thumbnail(outputSize)
-    i.save(picturePath)
-    i.close()
-    return pictureName
 
 @app.route("/profile", methods=["GET", "POST"])
 @login_required
@@ -101,7 +90,7 @@ def departments():
         db.session.add(department)
         db.session.commit()
         return redirect(url_for("departments"))
-    return render_template("departments.html", departments=departments, sidebar = True, form=form)
+    return render_template("departments.html", departments=departments, sidebar = 4, form=form)
 
 
 @app.route("/deleteDepartment", methods=["POST"])
@@ -110,6 +99,14 @@ def deleteDepartment():
     departmentName = request.form.get("departmentName")
     department = Departments.query.filter_by(departmentName=departmentName).first()
     db.session.delete(department)
+    rows = VisitedDepartments.query.filter_by(department_id=department.id).all()
+    for row in rows:
+        apt_id = row.appointment_id
+        if len(VisitedDepartments.query.filter_by(appointment_id=apt_id).all()) == 1:
+            appointment = Appointment.query.filter_by(id=apt_id).first()
+            db.session.delete(appointment)
+        db.session.delete(row)
+
     db.session.commit()
     return redirect(url_for("departments"))
 
@@ -129,12 +126,13 @@ def createAppointment():
             db.session.add(visitedDepartment)
     
         db.session.commit()
-        flash(f'Your appointment has been created. Please Log in and complete your profile data to proceed.', 'success')
+        flash(f'Your appointment has been created.', 'success')
     appointments = []
     rows = Appointment.query.filter_by(visitor_id=current_user.id)
     for row in rows:
         entry={}
         entry["appointmentDate"] = row.appointmentDate.date()
+        entry['appointment_id'] = row.id
         dpts = VisitedDepartments.query.filter_by(appointment_id=row.id)
         listOfDpts = []
         for dpt in dpts:
@@ -142,7 +140,20 @@ def createAppointment():
             listOfDpts.append(name.departmentName)
         entry["departments"] = listOfDpts
         appointments.append(entry)
-    return render_template("createAppointment.html", sidebar = True, form=form, appointments=appointments)
+    return render_template("createAppointment.html", sidebar = 6, form=form, appointments=appointments)
+
+@app.route("/deleteAppointment", methods=["POST", "GET"])
+@login_required
+def deleteAppointment():
+    appointment_id = request.form.get("appointment_id")
+    appointment = Appointment.query.filter_by(id=appointment_id).first()
+    db.session.delete(appointment)
+    rows = VisitedDepartments.query.filter_by(appointment_id=appointment_id).all()
+    for row in rows:
+        db.session.delete(row)
+    db.session.commit()
+    return redirect(url_for("createAppointment"))
+
 
 @app.route("/allowedDaysToVisit", methods=["POST", "GET"])
 @login_required
@@ -154,7 +165,7 @@ def allowedDaysToVisit():
         db.session.add(day)
         db.session.commit()       
         return redirect(url_for("allowedDaysToVisit"))
-    return render_template("allowedDaysToVisit.html", days = getAllowedDaysToVisit(), sidebar = True, form=UpdateVisitingDays())
+    return render_template("allowedDaysToVisit.html", days = getAllowedDaysToVisit(), sidebar = 4, form=UpdateVisitingDays())
 
 @app.route("/deleteDay", methods=["POST"])
 @login_required
@@ -164,3 +175,35 @@ def deleteDay():
     db.session.delete(day)
     db.session.commit()
     return redirect(url_for("allowedDaysToVisit"))
+
+@app.route("/users", methods=["POST", "GET"])
+@login_required
+def users():
+    users = User.query.all()
+    return render_template("users.html", sidebar = False, users=users)
+
+@app.route("/printAppointment", methods=["POST", "GET"])
+@login_required
+def printAppointment():
+    if request.method == "POST":
+        appointment_id = request.form.get("appointment_id")
+        appointment = Appointment.query.filter_by(id=appointment_id).first()
+        user_id = appointment.visitor_id
+        user = User.query.filter_by(id=user_id).first()
+        userphoto = user.imageFile
+        generatePDF(userphoto, appointment_id)
+        path = os.path.join(app.root_path, "static/Visits_Printouts")
+        filename = (appointment_id + ".pdf")
+        try:
+            flash(f'PDF confirmation was downloaded. Please print and give it to the Security staff when arriving', 'success')
+            return send_from_directory(path, filename, as_attachment=True)
+        except:
+            flash(f'Unable to download the PDF confirmation. PLease inform the Security staff when arriving', 'danger')
+            return redirect(url_for("createAppointment"))
+    return "<h1> not available </h1>"
+   
+    # code something to dowload the pdf file
+    #return render_template("printout.html", sidebar = False)
+
+
+

@@ -1,13 +1,12 @@
-from csv import field_size_limit
-from dataclasses import Field
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
-from ssl import ALERT_DESCRIPTION_BAD_CERTIFICATE_HASH_VALUE
+from webbrowser import get
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, DateField, SelectMultipleField, SelectField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, Regexp, ValidationError
 from nmcvisits.models import User, Appointment, Departments, AllowedDaysToVisit # ,VisitedDepartments
-from nmcvisits.helpers import getDepartments
+from nmcvisits.helpers import getDepartments, notYetAllowedDays
 
 
 class RegistrationForm(FlaskForm):
@@ -39,10 +38,8 @@ class UpdateProfileForm(FlaskForm):
     submit = SubmitField('Update')
 
 class CreateAppointment(FlaskForm):
-    departments = getDepartments()
-   
     appointmentDate = DateField("Appointment requested Date", validators=[DataRequired()])
-    department = SelectMultipleField("Departments to visit", validators=[DataRequired()], choices=[*departments])
+    department = SelectMultipleField("Departments to visit", validators=[DataRequired()], choices=getDepartments)
     submit = SubmitField('Create Appointment')
 
     def validate_appointmentDate(self, appointmentDate):
@@ -62,11 +59,7 @@ class AddDepartments(FlaskForm):
             raise ValidationError("Department is already available.")
 
 class UpdateVisitingDays(FlaskForm):
-    weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    notYetAllowedDays = weekdays
-    rows = AllowedDaysToVisit.query.all()
-    for row in rows:
-        notYetAllowedDays.remove(row.day)
+    
     day = SelectField("Day", choices = notYetAllowedDays, validators=[DataRequired()])
     submit = SubmitField('Update Visiting Days')
 

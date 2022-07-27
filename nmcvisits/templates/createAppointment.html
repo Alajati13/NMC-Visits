@@ -41,28 +41,37 @@
     </div>
 {% endblock %}
 
+
 {% if appointments %}
 {% block side %}
 <div class="content-section">
     <h3>Booked Appointments</h3>
         <ul class="list-group">
             {% for appointment in appointments %}
-                    <form class="d-flex flex-row p-2" method="Post" action="">
-                        <div class="align-self-stretch align-items-center">
-                            <li class="d-flex"><strong>{{appointment.appointmentDate}}</strong></li>
-                            {% for dpt in appointment.departments %}
-                                <li>
-                                    <small>{{dpt}}</small>
-                                </li>
-                            {% endfor %}
-                        </div>
-                        <div class="d-flex ml-auto align-items-center">
-                            <input type="hidden" name="appointmentName" value="{{appointment.id}}">
-                            <input class="p-2" type="submit" value="-">
-                        </div>
-                    </form>
-            {% endfor %}
+                    <div class="d-flex flex-fill flex-row align-content-stretch p-2">
+                            <div class="align-self-stretch align-items-center">
+                                <li class="d-flex align-content-stretch"><strong>{{appointment.appointmentDate}}</strong></li>
+                                {% for dpt in appointment.departments %}
+                                    <li>
+                                        <small>{{dpt}}</small>
+                                    </li>
+                                {% endfor %}
+                            </div>
+                            <div class="d-flex ml-auto align-content-end align-items-center">
+                                <form class="d-flex flex-fill flex-row p-2" method="Post" action="{{url_for('deleteAppointment')}}">
+                                    <input type="hidden" name="appointment_id" value="{{appointment.appointment_id}}">
+                                    <input class="p-2" type="submit" name="submitbutton" id="submitbutton" value="-">
+                                </form>
+                                <form action="{{url_for('printAppointment')}}" method="Post">
+                                    <input type="hidden" name="appointment_id" value="{{appointment.appointment_id}}">
+                                    <input class="p-2 ml-2" type="submit" value="P">
+                                </form>
+                            </div>
+                    </div>                
+            {% endfor %}   
         </ul>
 </div>
 {% endblock %}
+{% else %}
+<h2>No Booked Appointments</h2>
 {% endif %}
