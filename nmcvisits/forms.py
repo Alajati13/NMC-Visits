@@ -68,3 +68,16 @@ class UpdateVisitingDays(FlaskForm):
       #      raise ValidationError("Day is already added to allowed days. select another day.")
         # update code so it is only showing days that are not allowed
 
+class RequestResetForm(FlaskForm):
+    email = StringField("Email", validators=[DataRequired(), Email(), Length(max=100)])
+    submit = SubmitField("Request Password Reset")
+    
+    def validate_email(self, email):
+        user =  User.query.filter_by(email=email.data).first()
+        if user is None:
+            raise ValidationError("There is no account with that email. You must register first.")
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField("Password",validators=[DataRequired(), Length(min=8, max=20), Regexp("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$", message="Password should be 8 characters at least and contain an upper case letter, a lower case letter, and a number")])
+    confirm_password = PasswordField('Confirm Password',validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField("Reset Password")

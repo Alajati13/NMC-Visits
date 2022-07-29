@@ -41,11 +41,13 @@
     </div>
 {% endblock %}
 
-
-{% if appointments %}
 {% block side %}
+
+
 <div class="content-section">
+    {% if appointments %}
     <h3>Booked Appointments</h3>
+    
         <ul class="list-group">
             {% for appointment in appointments %}
                     <div class="d-flex flex-fill flex-row align-content-stretch p-2">
@@ -71,7 +73,8 @@
             {% endfor %}   
         </ul>
 </div>
-{% endblock %}
 {% else %}
-<h2>No Booked Appointments</h2>
+<h3>No Booked Appointments</h3>
 {% endif %}
+{% endblock %}
+

@@ -1,12 +1,19 @@
+from cgitb import html
 import secrets
 import os
 from PIL import Image
 from flask import render_template, url_for, redirect, flash, request, send_from_directory
-from nmcvisits import app, db, bcrypt
-from nmcvisits.forms import RegistrationForm, LoginForm, UpdateProfileForm ,AddDepartments, CreateAppointment, UpdateVisitingDays
+from sqlalchemy import true
+from nmcvisits import app, db, bcrypt, mail
+from nmcvisits.forms import RegistrationForm, LoginForm, UpdateProfileForm ,AddDepartments, CreateAppointment, UpdateVisitingDays, RequestResetForm, ResetPasswordForm
 from nmcvisits.models import Departments, User, Appointment, AllowedDaysToVisit, VisitedDepartments
 from flask_login import login_user, current_user, logout_user, login_required
 from nmcvisits.helpers import getDepartments, getAllowedDaysToVisit, savePicture, generatePDF
+from flask_mail import Message
+import magic
+from threading import Thread
+
+
 
 @app.route("/")
 @app.route("/home")
@@ -52,7 +59,7 @@ def logout():
     logout_user()
     return redirect(url_for("home"))
 
-
+# do profile so that it shows one view (no sidebar) and there is a big edit profile button that add sidebar with editing tools 
 @app.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile():
@@ -78,7 +85,7 @@ def profile():
         form.phone.data = current_user.phone
 
     imageFile = url_for("static", filename="profile_photos/" + current_user.imageFile)
-    return render_template("profile.html", title = "Profile", imageFile=imageFile, form=form)
+    return render_template("profile.html", title = "Profile", sidebar = 7, imageFile=imageFile, form=form)
 
 @app.route("/departments", methods=["GET", "POST"])
 @login_required
@@ -110,6 +117,25 @@ def deleteDepartment():
     db.session.commit()
     return redirect(url_for("departments"))
 
+def sendConfirmationEmail(user, appointment):
+    msg = Message(subject = "Your Appointment to Visit NMC Hospital is Confirmed", sender = "alajati13@gmail.com", recipients=[user.email],
+    body = "please print the attched pdf before proceeding to security office",
+    html = f'''<h1>Hi {user.username}</h1>please print the attched pdf before proceeding to security office''')
+    appointment_id = str(appointment.id)
+    generatePDF(appointment_id)
+    path = os.path.join(app.root_path, "static/Visits_Printouts")
+    file = os.path.join(path, (str(appointment_id) + ".pdf"))
+    fileName = "Confirmation"
+    mime = magic.from_file(file, mime=True)
+    with open(file, "rb") as fp: 
+        msg.attach(filename=fileName, content_type = mime, data=fp.read(), disposition=None, headers=None)
+    thr = Thread(target=send_async_email, args=[app, msg])
+    thr.start()
+
+def send_async_email(app, msg):
+    with app.app_context():
+        mail.send(msg)
+
 
 @app.route("/createAppointment", methods=["POST", "GET"])
 @login_required
@@ -126,7 +152,10 @@ def createAppointment():
             db.session.add(visitedDepartment)
     
         db.session.commit()
-        flash(f'Your appointment has been created.', 'success')
+        user = User.query.get(appointment.visitor_id)
+        flash(f'Your appointment has been created. A confirmation email will be sent to you shortly.', 'success')
+        sendConfirmationEmail(user, appointment)
+        return redirect(url_for("createAppointment"))
     appointments = []
     rows = Appointment.query.filter_by(visitor_id=current_user.id)
     for row in rows:
@@ -147,10 +176,10 @@ def createAppointment():
 def deleteAppointment():
     appointment_id = request.form.get("appointment_id")
     appointment = Appointment.query.filter_by(id=appointment_id).first()
-    db.session.delete(appointment)
     rows = VisitedDepartments.query.filter_by(appointment_id=appointment_id).all()
     for row in rows:
         db.session.delete(row)
+    db.session.delete(appointment)
     db.session.commit()
     return redirect(url_for("createAppointment"))
 
@@ -192,15 +221,97 @@ def printAppointment():
         path = os.path.join(app.root_path, "static/Visits_Printouts")
         filename = (appointment_id + ".pdf")
         try:
-            flash(f'PDF confirmation was downloaded. Please print and give it to the Security staff when arriving', 'success')
             return send_from_directory(path, filename, as_attachment=True)
         except:
-            flash(f'Unable to download the PDF confirmation. PLease inform the Security staff when arriving', 'danger')
+            flash(f'Unable to download the PDF confirmation. Please inform the Security staff when arriving', 'danger')
             return redirect(url_for("createAppointment"))
-    return "<h1> not available </h1>"
-   
-    # code something to dowload the pdf file
+    return "<h1> This page is not available </h1>"
     #return render_template("printout.html", sidebar = False)
 
+@app.route('/appointment/<int:number>')
+@login_required
+def allow(number):
+    appointment = Appointment.query.filter_by(id=number).first()
+    user = User.query.filter_by(id=appointment.visitor_id).first()
+    departments_id = VisitedDepartments.query.filter_by(appointment_id=appointment.id).all()
+    departments = []
+    for dpt in departments_id:
+        department = Departments.query.filter_by(id=dpt.department_id).first()
+        departments.append(department.departmentName)
+    return render_template("appointment.html", sidebar = 4, appointment=appointment, user=user, departments=departments)
 
 
+@app.route("/appointments", methods=["POST", "GET"])
+@login_required
+def appointments():
+    allAppointments = []
+    appointments = Appointment.query.all()
+    for appointment in appointments:
+        user = User.query.filter_by(id=appointment.visitor_id).first()
+        departments_id = VisitedDepartments.query.filter_by(appointment_id=appointment.id).all()
+        departments = []
+        for dpt in departments_id:
+            department = Departments.query.filter_by(id=dpt.department_id).first()
+            departments.append(department.departmentName)
+        
+        createdAppointment = {}
+        createdAppointment["appointment"] = appointment
+        createdAppointment["user"] = user
+        createdAppointment["departments"] = departments
+        allAppointments.append(createdAppointment)
+    return render_template("appointments.html", sidebar = False, title = "Appointments", data=allAppointments)
+
+def sendResetEmail(user):
+    token = user.get_reset_token()
+    msg = Message(subject = "Password Reset Request", sender = "alajati13@gmail.com", recipients=[user.email],
+    body = f'''To reset your password, visit the following link
+{url_for("resetToken", token=token, _external=True)}
+    
+If you did not make this request then simply ignore this email and no changes will be made
+''',
+    html = f'''<h1>Hi {user.username}</h1>To reset your password, visit the following link
+{url_for("resetToken", token=token, _external=True)}
+    
+<small>If you did not make this request then simply ignore this email and no changes will be made</small>
+''')
+    thr = Thread(target=send_async_email, args=[app, msg])
+    thr.start()
+
+@app.route("/resetPassword", methods=["POST", "GET"])
+def resetRequest():
+    if current_user.is_authenticated:
+        return redirect(url_for("home"))
+    form = RequestResetForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        sendResetEmail(user)
+        flash("An email has been sent with instruction to reset your password", "info")
+        return redirect(url_for("login"))
+    return render_template("resetrequest.html", title = "Reset Password", form=form)
+
+
+@app.route("/resetPassword/<token>", methods=["POST", "GET"])
+def resetToken(token):
+    if current_user.is_authenticated:
+        return redirect(url_for("home"))
+    user = User.verify_reset_token(token)
+    if user is None:
+        flash("That is an invalid or expired token", "warning")
+        return redirect(url_for("resetrequest"))    
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        hashed_pasword = bcrypt.generate_password_hash(form.password.data).decode("utf-8")    
+        user.password = hashed_pasword
+        db.session.commit()
+        flash(f'Your password has been updated. Yu are now able to Login', 'success')
+        return redirect("/login")
+    return render_template("resetToken.html", title = "Reset Password", form=form)
+
+
+"""
+f'''To reset your password, visit the following link
+{url_for("resetToken", token=token, _external=True)}
+    
+If you did not make this request then simply ignore this email and no changes will be made
+'''
+"""

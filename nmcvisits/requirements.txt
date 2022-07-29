@@ -5,3 +5,8 @@ email_validators
 flask-bcrypt
 flask-login
 Pillow
+qrcode
+flask-mail
+jwt
+python-magic
+brew install libmagic

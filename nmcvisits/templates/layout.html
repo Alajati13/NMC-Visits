@@ -29,8 +29,10 @@
               <a class="nav-item nav-link" href="{{ url_for('home') }}">Home</a>
               <a class="nav-item nav-link" href="{{ url_for('about') }}">About</a>
               <a class="nav-item nav-link" href="{{ url_for('departments') }}">Departments</a>
+              <a class="nav-item nav-link" href="{{ url_for('allowedDaysToVisit') }}">Days</a>
               <a class="nav-item nav-link" href="{{ url_for('createAppointment') }}">Book Appointment</a>
               <a class="nav-item nav-link" href="{{ url_for('users') }}">Users</a>
+              <a class="nav-item nav-link" href="{{ url_for('appointments') }}">Appointments</a>
 
               
             </div>
@@ -66,9 +68,9 @@
               {% endfor %}
             {% endif %}
           {% endwith %}
-          {% block body %}{% endblock %}
+          {% block body %}
+          {% endblock %}
         </div>
-
         <!-- Navbar Right Side -->
         {% if sidebar %}
         <div class="col-md-{{sidebar}}">
@@ -78,11 +80,8 @@
           </div>
         </div> 
         {% endif %}
-        
       </div>
     </main>
-
-
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>

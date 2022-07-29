@@ -1,85 +1,123 @@
 {% extends "layout.html" %}
 
 {% block body %}
-    <div class="content-section">
-        <div class="media pt-2">
-            <img class="rounded-circle border border-secondary account-img", src="{{imageFile}}" alt="User Photo">
-            <div class="media-body">
-                <h2 class="account-heading">{{current_user.username}}</h2>
-                <p class="text-secondary">{{current_user.email}}</p>
-            </div>
+<div class="content-section bg-secondary text-white">
+    <div class="media pt-2">
+        <img class="rounded-circle border border-secondary account-img", src="{{imageFile}}" alt="User Photo">
+    </div>
+    <div class="media pt-2">
+        <div class="media-body">
+            <h2 class="account-heading text-white">{{current_user.username}}</h2>
         </div>
-        <form action="" method="POST" enctype="multipart/form-data">
-            {{ form.hidden_tag() }}
-            <fieldset class="form-group">
-                <legend class="border-bottom mb-4 pb-2">Account Info</legend>
-                    <div class="form-group">
-                        {{ form.username.label(class="form-control-label") }}
-                        {% if form.username.errors %}
-                            {{ form.username(class="form-control form-control-lg is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form.username.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.username(class="form-control form-control-lg")  }}
-                        
-                        {% endif %}
-                    </div>
-                    <div class="form-group">
-                        {{ form.jobTitle.label(class="form-control-label") }}
-                        {% if form.jobTitle.errors %}
-                            {{ form.jobTitle(class="form-control form-control-lg is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form.jobTitle.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.jobTitle(class="form-control form-control-lg") }}
-                        {% endif %}
-                    </div>
-                    <div class="form-group">
-                        {{ form.company.label(class="form-control-label") }}
-                        {% if form.company.errors %}
-                            {{ form.company(class="form-control form-control-lg is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form.company.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.company(class="form-control form-control-lg") }}
-                        {% endif %}
-                    </div>
-                    <div class="form-group">
-                        {{ form.phone.label(class="form-control-label") }}
-                        {% if form.phone.errors %}
-                            {{ form.phone(class="form-control form-control-lg is-invalid") }}
-                            <div class="invalid-feedback">
-                                {% for error in form.phone.errors %}
-                                    <span>{{ error }}</span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            {{ form.phone(class="form-control form-control-lg") }}
-                        {% endif %}
-                    </div>
+    </div>
+    <div>
+        <fieldset class="form-group">
+            <div class="form-group">
+                Email :
+                {{current_user.email}}
+            </div>
+            <div class="form-group">
+                Job Title :
+                {{current_user.jobTitle}}   
+            </div>
+            <div class="form-group">
+                Company :
+                {{current_user.company}}
+            </div>
+            <div class="form-group">
+                Phone :
+                {{current_user.phone}}
+            </div>
+        </fieldset>
+    </div>
+</div>
+{% endblock %}
+
+{% block side %}
+
+<div>
+    <div class="media pt-2">
+        <div class="media-body bg-secondary">
+            <h2 class="account-heading pt-3 text-center text-white mb-3">Edit Profile</h2>        
+        </div>
+        </div>
+    <div class="media pt-2">
+        <img class="rounded-circle border border-secondary account-img", src="{{imageFile}}" alt="User Photo">
+        <div class="media-body">
+            <h2 class="account-heading pt-3">{{current_user.username}}</h2>
+            <p class="text-secondary">{{current_user.email}}</p>
+        </div>
+    </div>
+    <form action="" method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4 pb-2">Account Info</legend>
+                <div class="form-group">
+                    {{ form.username.label(class="form-control-label") }}
+                    {% if form.username.errors %}
+                        {{ form.username(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.username.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.username(class="form-control form-control-lg")  }}
+                    
+                    {% endif %}
                 </div>
                 <div class="form-group">
-                    {{ form.picture.label() }}
-                    {{ form.picture(class="form-control-file") }}
-                    {% if form.picture.errors %}
-                        {% for error in form.picture.errors %}
-                            <span class="text-danger">{{ error }}</span><br>
-                        {% endfor %}
+                    {{ form.jobTitle.label(class="form-control-label") }}
+                    {% if form.jobTitle.errors %}
+                        {{ form.jobTitle(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.jobTitle.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.jobTitle(class="form-control form-control-lg") }}
                     {% endif %}
-                </div>    
-            </fieldset>
-            <div>
-                {{ form.submit(class="btn btn-outline-info") }}
+                </div>
+                <div class="form-group">
+                    {{ form.company.label(class="form-control-label") }}
+                    {% if form.company.errors %}
+                        {{ form.company(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.company.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.company(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.phone.label(class="form-control-label") }}
+                    {% if form.phone.errors %}
+                        {{ form.phone(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.phone.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.phone(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
             </div>
-        </form>
-    </div>  
+            <div class="form-group">
+                {{ form.picture.label() }}
+                {{ form.picture(class="form-control-file") }}
+                {% if form.picture.errors %}
+                    {% for error in form.picture.errors %}
+                        <span class="text-danger">{{ error }}</span><br>
+                    {% endfor %}
+                {% endif %}
+            </div>    
+        </fieldset>
+        <div>
+            {{ form.submit(class="btn btn-outline-info") }}
+        </div>
+    </form>
 {% endblock %}

@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<div class="content-section">
+    <ul class="list-group">
+        <li class="d-flex align-content-stretch"><strong>{{user.username}}</strong></li>
+        <li class="d-flex align-content-stretch"><strong>{{user.jobTitle}}</strong></li>
+        <li class="d-flex align-content-stretch"><strong>{{user.company}}</strong></li>
+        <li class="d-flex align-content-stretch"><strong>{{appointment.appointmentDate.date()}}</strong></li>
+    </ul>
+</div>  
+{% endblock %}
+
+
+{% block side %}
+<div class="content-section">
+    <h3>Departments to Visit</h3>
+        <ul class="list-group">
+            {% for department in departments %}
+                <li class="d-flex align-content-stretch"><strong>{{department}}</strong></li>
+            {% endfor %}   
+        </ul>
+</div>
+{% endblock %}
