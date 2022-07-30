@@ -238,7 +238,8 @@ def allow(number):
     for dpt in departments_id:
         department = Departments.query.filter_by(id=dpt.department_id).first()
         departments.append(department.departmentName)
-    return render_template("appointment.html", sidebar = 4, appointment=appointment, user=user, departments=departments)
+    imageFile = url_for("static", filename="profile_photos/" + user.imageFile)
+    return render_template("appointment.html", sidebar = 6, appointment=appointment, user=user, departments=departments, path=imageFile)
 
 
 @app.route("/appointments", methods=["POST", "GET"])
