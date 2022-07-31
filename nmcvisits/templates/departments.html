@@ -2,7 +2,7 @@
 
 {% block body %}
     <div class="content-section">
-        <form method="Post" action="{{url_for('departments')}}">
+        <form method="Post" action="{{url_for('hospitals.departments')}}">
             {{ form.hidden_tag() }}
             <fieldset class="form-group">
                 <legend class="border-bottom mb-4 pb-2">Add Department</legend>
@@ -33,7 +33,7 @@
     <h3>Current Departments</h3>
         <ul class="list-group">
             {% for department in departments %}
-                    <form class="d-flex flex-row p-2" method="Post" action="{{url_for('deleteDepartment')}}">
+                    <form class="d-flex flex-row p-2" method="Post" action="{{url_for('hospitals.deleteDepartment')}}">
                         <div class="d-flex align-self-stretch align-items-center">
                             <li class="d-flex">{{department}}</li>
                         </div>
