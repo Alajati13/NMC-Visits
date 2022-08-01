@@ -6,6 +6,9 @@ import secrets
 from fpdf import FPDF
 import qrcode   
 import shutil
+from functools import wraps
+from flask_login import current_user
+from flask import render_template, flash
 
 def getDepartments():
     departments = []
@@ -143,3 +146,12 @@ def generatePDF(appointment_id):
     os.remove(qr_path)
     outputPath = os.path.join(app.root_path, "static/Visits_Printouts", (appointment_id + ".pdf"))
     pdf.output(outputPath)
+
+def isAdmin(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.role != "Admin":
+            flash("You need to be logged in as Admin to access the requested page!","info")
+            return render_template("home.html", title = "Access not allowed")
+        return f(*args, **kwargs)
+    return decorated_function

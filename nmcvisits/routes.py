@@ -8,7 +8,7 @@ from nmcvisits import app, db, bcrypt, mail
 from nmcvisits.forms import RegistrationForm, LoginForm, UpdateProfileForm ,AddDepartments, CreateAppointment, UpdateVisitingDays, RequestResetForm, ResetPasswordForm
 from nmcvisits.models import Departments, User, Appointment, AllowedDaysToVisit, VisitedDepartments
 from flask_login import login_user, current_user, logout_user, login_required
-from nmcvisits.helpers import getDepartments, getAllowedDaysToVisit, savePicture, generatePDF
+from nmcvisits.helpers import getDepartments, getAllowedDaysToVisit, savePicture, generatePDF, isAdmin
 from flask_mail import Message
 import magic
 from threading import Thread
