@@ -26,14 +26,18 @@
           </button>
           <div class="collapse navbar-collapse" id="navbarToggle">
             <div class="navbar-nav mr-auto">
+              {% if current_user.role != "Admin" %}
               <a class="nav-item nav-link" href="{{ url_for('home') }}">Home</a>
               <a class="nav-item nav-link" href="{{ url_for('about') }}">About</a>
+              <a class="nav-item nav-link" href="{{ url_for('createAppointment') }}">Book Appointment</a>
+              {% endif %}
+              {% if current_user.role == "Admin" %}
               <a class="nav-item nav-link" href="{{ url_for('departments') }}">Departments</a>
               <a class="nav-item nav-link" href="{{ url_for('allowedDaysToVisit') }}">Days</a>
-              <a class="nav-item nav-link" href="{{ url_for('createAppointment') }}">Book Appointment</a>
               <a class="nav-item nav-link" href="{{ url_for('users') }}">Users</a>
               <a class="nav-item nav-link" href="{{ url_for('appointments') }}">Appointments</a>
-
+              {% endif %}
+              
               
             </div>
             <div class="navbar-nav">

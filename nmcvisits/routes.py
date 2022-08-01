@@ -89,6 +89,7 @@ def profile():
 
 @app.route("/departments", methods=["GET", "POST"])
 @login_required
+@isAdmin
 def departments():
     departments = getDepartments()
     form = AddDepartments()
@@ -102,6 +103,7 @@ def departments():
 
 @app.route("/deleteDepartment", methods=["POST"])
 @login_required
+@isAdmin
 def deleteDepartment():
     departmentName = request.form.get("departmentName")
     department = Departments.query.filter_by(departmentName=departmentName).first()
@@ -186,6 +188,7 @@ def deleteAppointment():
 
 @app.route("/allowedDaysToVisit", methods=["POST", "GET"])
 @login_required
+@isAdmin
 def allowedDaysToVisit():
     form = None
     form = UpdateVisitingDays()
@@ -198,6 +201,7 @@ def allowedDaysToVisit():
 
 @app.route("/deleteDay", methods=["POST"])
 @login_required
+@isAdmin
 def deleteDay():
     dayName = request.form.get("day")
     day = AllowedDaysToVisit.query.filter_by(day=dayName).first()
@@ -230,6 +234,7 @@ def printAppointment():
 
 @app.route('/appointment/<int:number>')
 @login_required
+@isAdmin
 def allow(number):
     appointment = Appointment.query.filter_by(id=number).first()
     user = User.query.filter_by(id=appointment.visitor_id).first()
@@ -244,6 +249,7 @@ def allow(number):
 
 @app.route("/appointments", methods=["POST", "GET"])
 @login_required
+@isAdmin
 def appointments():
     allAppointments = []
     appointments = Appointment.query.all()
@@ -309,10 +315,3 @@ def resetToken(token):
     return render_template("resetToken.html", title = "Reset Password", form=form)
 
 
-"""
-f'''To reset your password, visit the following link
-{url_for("resetToken", token=token, _external=True)}
-    
-If you did not make this request then simply ignore this email and no changes will be made
-'''
-"""
