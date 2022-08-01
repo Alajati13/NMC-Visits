@@ -2,7 +2,7 @@
 
 {% block body %}
     <div class="content-section">
-        <form method="Post" action="{{url_for('hospitals.allowedDaysToVisit')}}">
+        <form method="Post" action="{{url_for('allowedDaysToVisit')}}">
             {{ form.hidden_tag() }}
             <fieldset class="form-group">
                 <legend class="border-bottom mb-4 pb-2">Add allowed day</legend>
@@ -34,7 +34,7 @@
         <ul class="list-group">
             {%if days %}
             {% for day in days %}
-                    <form class="d-flex flex-row p-2" method="Post" action="{{url_for('hospitals.deleteDay')}}">
+                    <form class="d-flex flex-row p-2" method="Post" action="{{url_for('deleteDay')}}">
                         <div class="d-flex align-self-stretch align-items-center">
                             <li class="d-flex">{{day}}</li>
                         </div>

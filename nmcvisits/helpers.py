@@ -1,38 +1,62 @@
-from nmcvisits.models import Departments, User, Appointment, AllowedDaysToVisit, VisitedDepartments
-from nmcvisits import mail
+from nmcvisits.models import User, Appointment, Departments, AllowedDaysToVisit, VisitedDepartments
+from nmcvisits import db, app
 import os
 from PIL import Image, ImageOps
+import secrets
 from fpdf import FPDF
-import qrcode
-from flask_mail import Message
-import magic
-# from threading import Thread
-from flask import current_app
+import qrcode   
+import shutil
 
-'''
-to be activiated after fixing
-def send_async_email(app, msg):
-    with app.app_context():
-        mail.send(msg)
-'''
-
-def sendConfirmationEmail(user, appointment):
-    msg = Message(subject = "Your Appointment to Visit NMC Hospital is Confirmed", sender = "alajati13@gmail.com", recipients=[user.email],
-    body = "please print the attched pdf before proceeding to security office",
-    html = f'''<h1>Hi {user.username}</h1>please print the attched pdf before proceeding to security office''')
-    appointment_id = str(appointment.id)
-    generatePDF(appointment_id)
-    path = os.path.join(current_app.root_path, "static/Visits_Printouts")
-    file = os.path.join(path, (str(appointment_id) + ".pdf"))
-    fileName = "Confirmation"
-    mime = magic.from_file(file, mime=True)
-    with open(file, "rb") as fp: 
-        msg.attach(filename=fileName, content_type = mime, data=fp.read(), disposition=None, headers=None)
-    mail.send(msg) #to replace with the async thing
-    #thr = Thread(target=send_async_email, args=[current_app, msg])
-    #thr.start()
+def getDepartments():
+    departments = []
+    for row in Departments.query.all():
+        departments.append(row.departmentName)
+        departments.sort()
+    return departments
 
 
+def getAllowedDaysToVisit():
+    allowedDaysToVisit = []
+    rows = AllowedDaysToVisit.query.all()
+    for row in rows:
+        allowedDaysToVisit.append(row.day)
+    return allowedDaysToVisit
+
+def notYetAllowedDays():
+    weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    notYetAllowedDays = weekdays
+    rows = AllowedDaysToVisit.query.all()
+    for row in rows:
+        notYetAllowedDays.remove(row.day)
+    return notYetAllowedDays
+
+def resizeImage(path):
+    im = Image.open(path)
+    thumb_width = 400
+
+    def crop_center(pil_img, crop_width, crop_height):
+        img_width, img_height = pil_img.size
+        return pil_img.crop(((img_width - crop_width) // 2,
+                            (img_height - crop_height) // 2,
+                            (img_width + crop_width) // 2,
+                            (img_height + crop_height) // 2))
+
+    def crop_max_square(pil_img):
+        return crop_center(pil_img, min(pil_img.size), min(pil_img.size))
+
+    im_thumb = crop_max_square(im).resize((thumb_width, thumb_width), Image.Resampling.LANCZOS)
+
+    return im_thumb
+
+def savePicture(formPicture):
+    random_hex = secrets.token_hex(8)
+    _, ext = os.path.splitext(formPicture.filename)
+    pictureName = random_hex + ext
+    picturePath = os.path.join(app.root_path, "static/Profile_Photos", pictureName)
+    i = resizeImage(formPicture)
+    i.save(picturePath)
+    i.close()
+    return pictureName
 
 def generateQRcode(appointment_id):
     # Link for website
@@ -46,7 +70,7 @@ def generateQRcode(appointment_id):
     qr.add_data(link)
     qr.make(fit=True)
     img = qr.make_image(fill='black', back_color='white')
-    path = os.path.join(current_app.root_path, "static/Visits_Printouts", (appointment_id + ".png"))
+    path = os.path.join(app.root_path, "static/Visits_Printouts", (appointment_id + ".png"))
     img.save(path)
         
 def generatePDF(appointment_id):
@@ -63,17 +87,17 @@ def generatePDF(appointment_id):
     pdf.set_font('Helvetica', size=24)
     pdf.set_text_color(90, 150, 255)
 
-    logo_path = os.path.join(current_app.root_path, "static/NMC_Logo.png")
+    logo_path = os.path.join(app.root_path, "static/NMC_Logo.png")
     pdf.image(logo_path, x = 30, y = 20, w = 30, h = 10)
     pdf.text(x = 78, y = 28, txt="NMC Hospital Visit Request")
 
     pdf.set_font('Helvetica', size=18)
     pdf.set_text_color(0, 0, 0)
 
-    path = os.path.join(current_app.root_path, "static/Profile_Photos", userphoto)
+    path = os.path.join(app.root_path, "static/Profile_Photos", userphoto)
     img = Image.open(path)
     bordered_img = ImageOps.expand(img, border=4, fill = "green")
-    save_path = os.path.join(current_app.root_path, userphoto)
+    save_path = os.path.join(app.root_path, userphoto)
     bordered_img.save(save_path)
     pdf.image(save_path, x = 15, y = 85, w = 45, h = 45)
     img.close()
@@ -114,8 +138,8 @@ def generatePDF(appointment_id):
     # generate qr code for link with key value pair at the end that opens only from a logged in admin showing the appointment is valid, and admin can click that appointment is used. if used already then cannot be used again.
     # add text at the end for like offical signature or stuff like that
     generateQRcode(appointment_id)
-    qr_path = os.path.join(current_app.root_path, "static/Visits_Printouts", (appointment_id + ".png"))
+    qr_path = os.path.join(app.root_path, "static/Visits_Printouts", (appointment_id + ".png"))
     pdf.image(qr_path, x = 70, y = 140, w = 120, h = 120)
     os.remove(qr_path)
-    outputPath = os.path.join(current_app.root_path, "static/Visits_Printouts", (appointment_id + ".pdf"))
+    outputPath = os.path.join(app.root_path, "static/Visits_Printouts", (appointment_id + ".pdf"))
     pdf.output(outputPath)

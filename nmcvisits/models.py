@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 from time import timezone
-from nmcvisits import db, login_manager
-from flask import current_app
+from nmcvisits import db, login_manager, app
 from flask_login import UserMixin
 import jwt
 
@@ -23,14 +22,14 @@ class User(db.Model, UserMixin):
     appointments = db.relationship('Appointment', backref='visitor', lazy=True)
 
     def get_reset_token(self, expiration=1800):
-        resetToken = jwt.encode({"user_id" : self.id, "exp" : datetime.now() + timedelta(seconds=expiration)}, current_app.config["SECRET_KEY"], algorithm = "HS256")
+        resetToken = jwt.encode({"user_id" : self.id, "exp" : datetime.now() + timedelta(seconds=expiration)}, app.config["SECRET_KEY"], algorithm = "HS256")
         return resetToken
     
     @staticmethod
     def verify_reset_token(token):
-        #s = Serializer(current_app.config["SECRET_KEY"])
+        #s = Serializer(app.config["SECRET_KEY"])
         try:
-            data = jwt.decode(token, current_app.config["SECRET_KEY"],leeway=timedelta(seconds=10), algorithms=["HS256"])
+            data = jwt.decode(token, app.config["SECRET_KEY"],leeway=timedelta(seconds=10), algorithms=["HS256"])
         except:
             return None
         user_id = data.get("user_id")
