@@ -32,6 +32,19 @@
                     {% else %}
                         {{ form.department(class="form-control form-control-lg") }}
                     {% endif %}
+                    <div class="form-group">
+                        {{ form.hospital.label(class="form-control-label") }}
+                        <small class="muted">(You can select up to 5 hospitals)</small>
+                        {% if form.hospital.errors %}
+                            {{ form.hospital(class="form-control form-control-lg is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.hospital.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.hospital(class="form-control form-control-lg") }}
+                        {% endif %}
                 </div>
             </fieldset>
             <div class="form-group">
@@ -42,32 +55,49 @@
 {% endblock %}
 
 {% block side %}
-
-
 <div class="content-section">
     {% if appointments %}
     <h3>Booked Appointments</h3>
-    
         <ul class="list-group">
             {% for appointment in appointments %}
                     <div class="d-flex flex-fill flex-row align-content-stretch p-2">
                             <div class="align-self-stretch align-items-center">
-                                <li class="d-flex align-content-stretch"><strong>{{appointment.appointmentDate}}</strong></li>
+                                <div class="align-content-stretch">
+                                    <strong>
+                                        Hospital : {{appointment.hospital.name}} <br>
+                                    </strong>
+                                    <strong>
+                                        Date : {{appointment.appointmentDate.date()}} <br>
+                                    </strong>
+                                        {% if appointment.status == "Approved" %}
+                                        <strong class="text-success">Status : {{appointment.status}}</strong><br>
+                                        {% elif appointment.status == "Rejected" %}
+                                        <strong class="text-danger">Status : {{appointment.status}}</strong><br>
+                                        {% else %}
+                                        <strong>Status : {{appointment.status}}</strong><br>
+                                        {% endif %}
+                                    <strong>
+                                        Departments :
+                                    </strong>
+                                </div>
                                 {% for dpt in appointment.departments %}
                                     <li>
-                                        <small>{{dpt}}</small>
+                                        <small>{{dpt.departmentNames.name}}</small>
                                     </li>
                                 {% endfor %}
                             </div>
                             <div class="d-flex ml-auto align-content-end align-items-center">
                                 <form class="d-flex flex-fill flex-row p-2" method="Post" action="{{url_for('deleteAppointment')}}">
-                                    <input type="hidden" name="appointment_id" value="{{appointment.appointment_id}}">
+                                    <input type="hidden" name="appointment_id" value="{{appointment.id}}">
                                     <input class="p-2" type="submit" name="submitbutton" id="submitbutton" value="-">
                                 </form>
+                                {% if appointment.status == "Approved" %}
                                 <form action="{{url_for('printAppointment')}}" method="Post">
-                                    <input type="hidden" name="appointment_id" value="{{appointment.appointment_id}}">
+                                    <input type="hidden" name="appointment_id" value="{{appointment.id}}">
                                     <input class="p-2 ml-2" type="submit" value="P">
                                 </form>
+                                {% endif %}
+
                             </div>
                     </div>                
             {% endfor %}   

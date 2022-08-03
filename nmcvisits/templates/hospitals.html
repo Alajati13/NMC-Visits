@@ -1,0 +1,97 @@
+{% extends "layout.html" %}
+
+{% block body %}
+    <div class="content-section">
+        <div class="media">
+            <h2>Filters</h2>
+        </div>
+        <form action="{{url_for('hospitals')}}" method="POST">
+            <div>
+                <div class="d-flex" >
+                    {% if hideDepartments %}
+                    <input type="checkbox" name="hideDepartments" checked>
+                    {% else %}
+                    <input type="checkbox" name="hideDepartments" >
+                    {% endif %}
+                    <h3 class="ml-4">Hide Departmetns</h3>
+                </div>
+                <div class="d-flex">
+                    {% if hideDays %}
+                    <input type="checkbox" name="hideDays" checked>
+                    {% else %}
+                    <input type="checkbox" name="hideDays" >
+                    {% endif %}                
+                    <h3 class="ml-4">Hide Visiting Days</h3>
+                    </div>
+                <input type="submit" value="Update Filters">
+            </div>
+            
+        </form>
+    </div>
+    <div class="content-section">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th><h3>Hospital Name</h3></th>
+                    <th><h3>City</h3></th>
+                    <th><h3>Address</h3></th>
+                    {% if not hideDepartments %}
+                    <th><h3>Departments</h3></th>
+                    {% endif %}
+                    {% if not hideDays %}
+                    <th><h3>Visiting Days</h3></th>
+                    {% endif %}
+                    <th><h3>Edit</h3></th>
+                </tr>
+            </thead>
+            {% for hospital in hospitals %}
+            <tbody>
+                <tr>
+                    <td><h3>{{hospital.name}}</h3></td>
+                    <td><h3>{{hospital.city}}</h3></td>
+                    <td><h3>{{hospital.address}}</h3></td>
+                        {% if not hideDepartments %}
+                        <td>
+                        <ul>
+                            {% for department in hospital.departments %}
+                                <li>{{department.department}}</li>
+                            {% endfor %}
+                        </ul>
+                        </td>
+                        {% endif %}
+                        {% if not hideDays %}
+                        <td>
+                            <ul>
+                                {% for day in hospital.visitingDays %}
+                                    <li>{{day.day}}</li>
+                                {% endfor%}
+                            </ul>
+                        </td>
+                        {% endif %}
+                    <td>
+                        <form action="{{url_for('editHospital')}}" method = "Post">
+                            <input type="hidden" name="id" value="{{hospital.id}}">
+                            <input type="submit" value="Edit">
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+            {% endfor %}
+        </table>
+        <div>
+            <form action="{{url_for('addHospital')}}">
+                <input type="submit" value="Add Hospital">
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block side %}
+<div class="content-section">
+    <h3>Current Departments</h3>
+        <ul class="list-group">
+            
+        </ul>
+</div>
+{% endblock %}

@@ -19,8 +19,8 @@
 <div class="content-section">
     <h3>Departments to Visit</h3>
         <ul class="list-group">
-            {% for department in departments %}
-                <li class="d-flex align-content-stretch"><strong>{{department}}</strong></li>
+            {% for dpt in appointment.departments %}
+                <li class="d-flex align-content-stretch"><strong>{{dpt.departmentNames.name}}</strong></li>
             {% endfor %}   
         </ul>
 </div>

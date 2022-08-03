@@ -1,52 +1,153 @@
 {% extends "layout.html" %}
 
 {% block body %}
-    
+<div class="content-section">
+    <div class="media">
+        <h2>Filters</h2>
+    </div>
+    <form action="{{url_for('appointments')}}" method="POST">
+        <div>
+            <div class="d-flex" >
+                add filter to select hospital
+                add filter to select dat from and date to
+            </div>
+            <div class="d-flex" >
+                {% if showPendingApproval %}
+                <input type="checkbox" name="showPendingApproval" value ="{{showPendingApproval}}" checked>
+                {% else %}
+                <input type="checkbox" name="showPendingApproval" value ="{{showPendingApproval}}">
+                {% endif %}
+                <h6 class="ml-4">Show Pending Approval</h6>
+            </div>
+            <div class="d-flex" >
+                {% if showApproved %}
+                <input type="checkbox" name="showApproved" value ="{{showApproved}}" checked>
+                {% else %}
+                <input type="checkbox" name="showApproved" value="{{showApproved}}">
+                {% endif %}
+                <h6 class="ml-4">Show Approved</h6>
+            </div>
+            <div class="d-flex" >
+                {% if showRejected %}
+                <input type="checkbox" name="showRejected" value = {{showRejected}} checked>
+                {% else %}
+                <input type="checkbox" name="showRejected" value = {{showRejected}}>
+                {% endif %}
+                <h6 class="ml-4">Show Rejected</h6>
+            </div>
+            <div class="d-flex" >
+                {% if hideDepartments %}
+                <input type="checkbox" name="hideDepartments" value = {{hideDepartments}} checked>
+                {% else %}
+                <input type="checkbox" name="hideDepartments" value = {{hideDepartments}}>
+                {% endif %}
+                <h6 class="ml-4">Hide Departmetns</h6>
+            </div>
+            <div class="d-flex">
+                {% if hideNotes %}
+                <input type="checkbox" name="hideNotes" value = {{hideNotes}} checked>
+                {% else %}
+                <input type="checkbox" name="hideNotes" value = {{hideNotes}}>
+                {% endif %}                
+                <h6 class="ml-4">Hide Notes</h6>
+            </div>
+            <input type="submit" value="Update Filters">
+        </div>
+        
+    </form>
+</div>
+{% endblock %}
+
+{% block side %}
+<div>
+    <form action="/generateRandomAppointments" method="Post">
+        <input type="submit" value="generate Dummy Appointments">
+    </form>
+    <form action="/approveAppointments" method="Post">
+        <input type="hidden" name="showPendingApproval" value="{{showPendingApproval}}">
+        <input type="hidden" name="showApproved" value="{{showApproved}}">
+        <input type="hidden" name="showRejected" value="{{showRejected}}">
+        <input type="hidden" name="hideDepartments" value="{{hideDepartments}}">
+        <input type="hidden" name="hideNotes" value="{{hideNotes}}">
+        <input type="submit" value="Show Filters">
+    </form>
+</div>
+<div>
     <table class="table border">
         <thead>
             <tr>
-            <th class="d-none d-lg-block"></th>
+            <th class="d-none d-lg-block">Photo</th>
             <th>Name</th>
+            {% if not hideNotes %}
             <th>Notes</th>
+            {% endif %}
             <th>Date</th>
+            <th>Hospital</th>
+            {% if not hideDepartments %}
             <th>Departments</th>
-            <th>Action</th>
+            {% endif %}
+            <th>Status</th>
             </tr>
         </thead>
         <tbody>
-            {% for d in data %}
+            {% for appointment in appointments %}
             <tr>
                 <td class="d-none d-lg-block">
-                    <img class="rounded-circle border border-secondary article-img" src="{{url_for('static', filename='profile_photos/' + d.user.imageFile)}}" alt="user photo">
+                    <img class="rounded-circle border border-secondary article-img" src="{{url_for('static', filename='profile_photos/' + appointment.visitor.imageFile)}}" alt="user photo">
                 </td>
-                <td><h6>{{d.user.username}}</h6></td>
+                <td><h6>{{appointment.visitor.username}}</h6></td>
+                {% if not hideNotes %}
                 <td>
                     <h6>
                         Notes
                     </h6>
                 </td>
-                <td><h6>{{d.appointment.appointmentDate.date()}}</h6></td>
+                {% endif %}
+                <td><h6>{{appointment.appointmentDate.date()}}</h6></td>
+                <td><h6>{{appointment.hospital.name}}</h6></td>
+                {% if not hideDepartments %}
                 <td>
                     <ul>
-                        {% for dpt in d.departments %}
+                        {% for dpt in appointment.departments %}
                         <li>
-                            {{dpt}}
+                            {{dpt.departmentNames.name}}
                         </li>
                     {% endfor %}
                     </ul>
                 </td>
+                {% endif %}
                 <td>
-                    <form action="" method="Post" class="mb-2">
-                        <input type="hidden" name="appointment_id" value="{{d.appointment.id}}">
+                    <h6>{{appointment.status}}</h6>
+                    {% if appointment.status != "Approved" %}
+                    <form action="/approveAppointments" method="Post" class="mb-2">
+                        <input type="hidden" name="showPendingApproval" value="{{showPendingApproval}}">
+                        <input type="hidden" name="showApproved" value="{{showApproved}}">
+                        <input type="hidden" name="showRejected" value="{{showRejected}}">
+                        <input type="hidden" name="hideDepartments" value="{{hideDepartments}}">
+                        <input type="hidden" name="hideNotes" value="{{hideNotes}}">
+
+                        <input type="hidden" name="appointment_id" value="{{appointment.id}}">
                         <input type="submit" value="Approve">
                     </form>
-                    <form action="" method="Post">
-                        <input type="hidden" name="appointment_id" value="{{d.appointment.id}}">
+                    {% endif %}
+
+                    {% if appointment.status != "Rejected" %}
+                    <form action="/rejectAppointment" method="Post">
+                        <input type="hidden" name="showPendingApproval" value="{{showPendingApproval}}">
+                        <input type="hidden" name="showApproved" value="{{showApproved}}">
+                        <input type="hidden" name="showRejected" value="{{showRejected}}">
+                        <input type="hidden" name="hideDepartments" value="{{hideDepartments}}">
+                        <input type="hidden" name="hideNotes" value="{{hideNotes}}">
+                       
+                        <input type="hidden" name="appointment_id" value="{{appointment.id}}">
                         <input type="submit" value="Reject">
                     </form>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+</div>
 {% endblock %}
+

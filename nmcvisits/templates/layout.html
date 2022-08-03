@@ -32,12 +32,15 @@
               <a class="nav-item nav-link" href="{{ url_for('createAppointment') }}">Book Appointment</a>
               {% endif %}
               {% if current_user.role == "Admin" %}
-              <a class="nav-item nav-link" href="{{ url_for('departments') }}">Departments</a>
-              <a class="nav-item nav-link" href="{{ url_for('allowedDaysToVisit') }}">Days</a>
               <a class="nav-item nav-link" href="{{ url_for('users') }}">Users</a>
               <a class="nav-item nav-link" href="{{ url_for('appointments') }}">Appointments</a>
+              <a class="nav-item nav-link" href="{{ url_for('hospitals') }}">Hospitals</a>
+              <a class="nav-item nav-link" href="{{ url_for('departments') }}">Departments</a>
+
+
               {% endif %}
               
+
               
             </div>
             <div class="navbar-nav">

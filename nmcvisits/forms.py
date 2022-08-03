@@ -1,13 +1,11 @@
-from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
-from webbrowser import get
+from email.policy import default
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, DateField, SelectMultipleField, SelectField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, DateField, SelectMultipleField, SelectField, HiddenField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, Regexp, ValidationError
-from nmcvisits.models import User, Appointment, Departments, AllowedDaysToVisit # ,VisitedDepartments
-from nmcvisits.helpers import getDepartments, notYetAllowedDays
-
+from nmcvisits.models import User, Appointment, Departments, EMIRATES, Weekdays, Hospital
+from nmcvisits.helpers import getDepartments
 
 class RegistrationForm(FlaskForm):
     username = StringField("Full Name", validators=[DataRequired(), Length(min=2, max=100)])
@@ -21,13 +19,11 @@ class RegistrationForm(FlaskForm):
         if user:
             raise ValidationError("Email is already used. please register using a different email")
 
-
 class LoginForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email(), Length(max=100)])
     password = PasswordField("Password",validators=[DataRequired()])
     remember = BooleanField('Remember Me')
     submit = SubmitField('Login')
-
 
 class UpdateProfileForm(FlaskForm):
     username = StringField("Full Name", validators=[DataRequired(), Length(min=2, max=100)])
@@ -37,36 +33,32 @@ class UpdateProfileForm(FlaskForm):
     picture = FileField("Update Profile Picture", validators=[FileAllowed(["jpg","png","bmp","jpeg","svg"])])
     submit = SubmitField('Update')
 
-class CreateAppointment(FlaskForm):
-    appointmentDate = DateField("Appointment requested Date", validators=[DataRequired()])
-    department = SelectMultipleField("Departments to visit", validators=[DataRequired()], choices=getDepartments)
-    submit = SubmitField('Create Appointment')
+def getHospitals():
+    hospitals = []
+    rows = Hospital.query.all()
+    for row in rows:
+        hospitals.append((row.id,row.name))
+    return hospitals
 
+class CreateAppointment(FlaskForm):
+    appointmentDate = DateField("Appointment Requested Date", validators=[DataRequired()])
+    hospital = SelectField("Hospital to Visit", validators=[DataRequired()], choices=getHospitals)
+    department = SelectMultipleField("Departments", validators=[DataRequired()], choices=getDepartments)
+    submit = SubmitField('Create Appointment')
     def validate_appointmentDate(self, appointmentDate):
         if appointmentDate.data <= datetime.today().date():
             raise ValidationError("Requested Date for visit cannot be in the past. please choose another date")
-
     # validate date here using a custom validator function
     # program the app so that admin can decide which days can be visiting days
 
 class AddDepartments(FlaskForm):
-    department = StringField("Department Name", validators=[DataRequired(), Length(min=2, max=100)])
+    name = StringField("Department Name", validators=[DataRequired(), Length(min=2, max=100)])
     submit = SubmitField('Add Department')
 
-    def validate_department(self, department):
-        dpt =  Departments.query.filter_by(departmentName=department.data.strip().lower().title()).first()
-        if dpt:
+    def validate_name(self, name):
+        department =  Departments.query.filter_by(name=name.data.strip().lower().title()).first()
+        if department:
             raise ValidationError("Department is already available.")
-
-class UpdateVisitingDays(FlaskForm):
-    
-    day = SelectField("Day", choices = notYetAllowedDays, validators=[DataRequired()])
-    submit = SubmitField('Update Visiting Days')
-
-    #def validate_day(self, day):
-     #   if day == AllowedDaysToVisit.query.filter_by(day=str(day.data)).first():
-      #      raise ValidationError("Day is already added to allowed days. select another day.")
-        # update code so it is only showing days that are not allowed
 
 class RequestResetForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email(), Length(max=100)])
@@ -81,3 +73,40 @@ class ResetPasswordForm(FlaskForm):
     password = PasswordField("Password",validators=[DataRequired(), Length(min=8, max=20), Regexp("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$", message="Password should be 8 characters at least and contain an upper case letter, a lower case letter, and a number")])
     confirm_password = PasswordField('Confirm Password',validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField("Reset Password")
+
+def getAllDepartments():
+    departments = []
+    rows = Departments.query.all()
+    for row in rows:
+        departments.append(row.name)
+    return departments
+
+class AddHospital(FlaskForm):
+    name = StringField("Hospital Name", validators=[DataRequired(), Length(min=2, max=100)])
+    city = SelectField("City", validators=[DataRequired()], choices=EMIRATES)
+    address = StringField("Address", validators=[DataRequired(), Length(min=2, max=200)])
+    departments = SelectMultipleField("Departments", validators=[DataRequired()], choices=getAllDepartments)
+    visitingDays = SelectMultipleField("Visiting Days", validators=[DataRequired()], choices=Weekdays.getWeekdays)
+    submit = SubmitField('Add Hospital')
+
+class EditHospital(FlaskForm):
+    hospital_id = HiddenField("Hospital ID", validators=[DataRequired()])
+    name = StringField("Hospital Name", validators=[DataRequired(), Length(min=2, max=100)])
+    city = SelectField("City", validators=[DataRequired()], choices=EMIRATES)
+    address = StringField("Address", validators=[DataRequired(), Length(min=2, max=200)])
+    departments = SelectMultipleField("Departments", validators=[DataRequired()], choices=getAllDepartments)
+    visitingDays = SelectMultipleField("Visiting Days", validators=[DataRequired()], choices=Weekdays.getWeekdays)
+    submit = SubmitField('Update Hospital Details')
+
+
+def getRemainingDepartments():
+    pass
+
+# might not use it, but use another way to add department directly from a grid ov available departments
+class AddHospitalDepartments(FlaskForm):
+    departments = SelectMultipleField("Departments", validators=[DataRequired()], choices=getRemainingDepartments)
+    submit = SubmitField('Add Department')
+
+class SetHospitalVisitingDays(FlaskForm):
+    days = SelectMultipleField("Days", validators=[DataRequired()], choices=Weekdays.getWeekdays)
+    submit = SubmitField('Set Days')

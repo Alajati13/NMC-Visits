@@ -1,5 +1,5 @@
-from nmcvisits.models import User, Appointment, Departments, AllowedDaysToVisit, VisitedDepartments
-from nmcvisits import db, app
+from nmcvisits.models import User, Appointment, Departments, VisitedDepartments
+from nmcvisits import db, app, mail
 import os
 from PIL import Image, ImageOps
 import secrets
@@ -8,30 +8,17 @@ import qrcode
 import shutil
 from functools import wraps
 from flask_login import current_user
-from flask import render_template, flash
+from flask import render_template, flash, url_for, redirect
+from flask_mail import Message
+from threading import Thread
+import magic
 
 def getDepartments():
     departments = []
     for row in Departments.query.all():
-        departments.append(row.departmentName)
+        departments.append(row.name)
         departments.sort()
     return departments
-
-
-def getAllowedDaysToVisit():
-    allowedDaysToVisit = []
-    rows = AllowedDaysToVisit.query.all()
-    for row in rows:
-        allowedDaysToVisit.append(row.day)
-    return allowedDaysToVisit
-
-def notYetAllowedDays():
-    weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    notYetAllowedDays = weekdays
-    rows = AllowedDaysToVisit.query.all()
-    for row in rows:
-        notYetAllowedDays.remove(row.day)
-    return notYetAllowedDays
 
 def resizeImage(path):
     im = Image.open(path)
@@ -133,12 +120,8 @@ def generatePDF(appointment_id):
     for department_id in dpts:
         department = Departments.query.filter_by(id=department_id.department_id).first()
         pdf.set_xy(15, y)
-        pdf.cell(30, 10, txt = f"- {department.departmentName}", ln = 1, align = 'l')
+        pdf.cell(30, 10, txt = f"- {department.name}", ln = 1, align = 'l')
         y += 10
-
-
-    # add photo of the user next to the text
-    # generate qr code for link with key value pair at the end that opens only from a logged in admin showing the appointment is valid, and admin can click that appointment is used. if used already then cannot be used again.
     # add text at the end for like offical signature or stuff like that
     generateQRcode(appointment_id)
     qr_path = os.path.join(app.root_path, "static/Visits_Printouts", (appointment_id + ".png"))
@@ -155,3 +138,63 @@ def isAdmin(f):
             return render_template("home.html", title = "Access not allowed")
         return f(*args, **kwargs)
     return decorated_function
+
+
+def isProfileComplete(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        userDetails = {}
+        userDetails["Full Name"]=current_user.username
+        userDetails["JobT itle"]=current_user.jobTitle
+        userDetails["Company"]=current_user.company
+        userDetails["Phone"]=current_user.phone
+        isComplete = True
+        missingElements = []
+        for element in userDetails:
+            if userDetails[element] == None:
+                isComplete = False
+                missingElements.append(element)
+        if current_user.imageFile == "default.jpg":
+            missingElements.append("Image File")
+            isComplete = False
+        if not isComplete:
+            flash(f"You need to complete your profile to be able to request appointments. Missing Details : {missingElements}","info")
+            return redirect("/profile")
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def sendResetEmail(user):
+    token = user.get_reset_token()
+    msg = Message(subject = "Password Reset Request", sender = "alajati13@gmail.com", recipients=[user.email],
+    body = f'''To reset your password, visit the following link
+{url_for("resetToken", token=token, _external=True)}
+    
+If you did not make this request then simply ignore this email and no changes will be made
+''',
+    html = f'''<h1>Hi {user.username}</h1>To reset your password, visit the following link
+{url_for("resetToken", token=token, _external=True)}
+    
+<small>If you did not make this request then simply ignore this email and no changes will be made</small>
+''')
+    thr = Thread(target=send_async_email, args=[app, msg])
+    thr.start()
+
+def send_async_email(app, msg):
+    with app.app_context():
+        mail.send(msg)
+
+def sendConfirmationEmail(user, appointment):
+    msg = Message(subject = "Your Appointment to Visit NMC Hospital is Confirmed", sender = "alajati13@gmail.com", recipients=[user.email],
+    body = "please print the attched pdf before proceeding to security office",
+    html = f'''<h1>Hi {user.username}</h1>please print the attched pdf before proceeding to security office''')
+    appointment_id = str(appointment.id)
+    generatePDF(appointment_id)
+    path = os.path.join(app.root_path, "static/Visits_Printouts")
+    file = os.path.join(path, (str(appointment_id) + ".pdf"))
+    fileName = "Confirmation"
+    mime = magic.from_file(file, mime=True)
+    with open(file, "rb") as fp: 
+        msg.attach(filename=fileName, content_type = mime, data=fp.read(), disposition=None, headers=None)
+    thr = Thread(target=send_async_email, args=[app, msg])
+    thr.start()

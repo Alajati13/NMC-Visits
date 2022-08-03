@@ -1,0 +1,90 @@
+{% extends "layout.html" %}
+
+{% block body %}
+    <div class="content-section">
+        <form method="Post" action="{{url_for('updateHospitalDetails')}}">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4 pb-2">Update Details for <strong>"{{hospital.name}}"</strong>  Hospital</legend>
+                <div class="form-group">
+                    
+                    {{ form.name.label(class="form-control-label") }}
+                    {% if form.name.errors %}
+                        {{ form.name(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.name.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.name(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.city.label(class="form-control-label") }}
+                    {% if form.city.errors %}
+                        {{ form.city(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.city.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.city(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.address.label(class="form-control-label") }}
+                    {% if form.address.errors %}
+                        {{ form.address(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.address.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.address(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+            </fieldset>
+            <div class="form-group">
+                {{ form.hospital_id }}
+                {{ form.submit(class="btn btn-outline-info") }}
+            </div>
+        </form>
+    </div>
+{% endblock %}
+
+
+{% block side %}
+<div class="content-section">
+    <div>
+        <div class="content-section">
+            <form action="/updateHospitalVisitingDays" method="Post">
+                <input type="hidden" name="id" value="{{hospital.id}}">
+                <h2>Update Visiting Days :</h2>
+                {% for day in hospital.visitingDays %}
+                <input type="checkbox" checked name="{{day.day}}" value="{{day.day}}"> <strong class="ml-2">{{day.day}}</strong> <br>
+                {% endfor %}
+                {% for day in remainingDays %}
+                <input type="checkbox" name="{{day}}" value="{{day}}"><strong class="ml-2">{{day}}</strong> <br>
+                {% endfor %}
+                <input type="submit" value="Update Visiting Days">
+            </form>
+        </div>
+            <form action="updateHospitalDepartments" method="Post">
+                <input type="hidden" name="id" value="{{hospital.id}}">
+                <h2>Update Departments :</h2>
+                {% for dpt in hospital.departments %}
+                <input type="checkbox" checked name="{{dpt.department}}" value="{{dpt.department}}"> <strong class="ml-2">{{dpt.department}}</strong> <br>
+                {% endfor %}
+                {% for dpt in remainingDepartments %}
+                <input type="checkbox" name="{{dpt}}" value="{{dpt}}"><strong class="ml-2">{{dpt}}</strong> <br>
+                {% endfor %}
+                <input type="submit" value="Update Departments Days">
+            </form>
+            
+        </div>
+    </div>
+</div>
+{% endblock %}

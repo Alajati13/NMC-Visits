@@ -1,0 +1,52 @@
+{% extends "layout.html" %}
+
+{% block body %}
+    
+    <table class="table border">
+        <thead>
+            <tr>
+            <th class="d-none d-lg-block"></th>
+            <th>Name</th>
+            <th>Notes</th>
+            <th>Date</th>
+            <th>Departments</th>
+            <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in data %}
+            <tr>
+                <td class="d-none d-lg-block">
+                    <img class="rounded-circle border border-secondary article-img" src="{{url_for('static', filename='profile_photos/' + d.user.imageFile)}}" alt="user photo">
+                </td>
+                <td><h6>{{d.user.username}}</h6></td>
+                <td>
+                    <h6>
+                        Notes
+                    </h6>
+                </td>
+                <td><h6>{{d.appointment.appointmentDate.date()}}</h6></td>
+                <td>
+                    <ul>
+                        {% for dpt in d.departments %}
+                        <li>
+                            {{dpt}}
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <form action="" method="Post" class="mb-2">
+                        <input type="hidden" name="appointment_id" value="{{d.appointment.id}}">
+                        <input type="submit" value="Approve">
+                    </form>
+                    <form action="" method="Post">
+                        <input type="hidden" name="appointment_id" value="{{d.appointment.id}}">
+                        <input type="submit" value="Reject">
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
